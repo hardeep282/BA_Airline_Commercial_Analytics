@@ -1,15 +1,17 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 st.set_page_config(page_title="BA Airline Commercial Analytics", layout="wide")
 
 @st.cache_data
 def load_data():
-    gold = pd.read_parquet("data/route_competitive_performance.parquet")
-    clusters = pd.read_parquet("data/route_clusters.parquet")
-    trends = pd.read_parquet("data/route_fare_trends.parquet")
-    airport_names = pd.read_parquet("data/airport_names.parquet")
+    gold = pd.read_parquet(os.path.join(BASE_DIR, "data", "route_competitive_performance.parquet"))
+    clusters = pd.read_parquet(os.path.join(BASE_DIR, "data", "route_clusters.parquet"))
+    trends = pd.read_parquet(os.path.join(BASE_DIR, "data", "route_fare_trends.parquet"))
+    airport_names = pd.read_parquet(os.path.join(BASE_DIR, "data", "airport_names.parquet"))
     return gold, clusters, trends, airport_names
 
 gold_df, clusters_df, trends_df, airport_names_df = load_data()
