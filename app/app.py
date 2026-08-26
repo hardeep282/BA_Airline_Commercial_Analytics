@@ -33,13 +33,13 @@ with tab1:
     origins = sorted(clusters_df["origin"].unique())
     selected_origin = st.selectbox(
         "Origin airport", origins,
-        format_func=lambda code: f"{code} - {airport_lookup.get(code, 'Unknown')}"
+        format_func=lambda code: f"🛫 {code} - {airport_lookup.get(code, 'Unknown')}"
     )
 
     dests = sorted(clusters_df[clusters_df["origin"] == selected_origin]["dest"].unique())
     selected_dest = st.selectbox(
         "Destination airport", dests,
-        format_func=lambda code: f"{code} - {airport_lookup.get(code, 'Unknown')}"
+        format_func=lambda code: f"🛬 {code} - {airport_lookup.get(code, 'Unknown')}"
     )
 
     route_row = clusters_df[
@@ -132,23 +132,35 @@ with tab2:
 
     fc_origin = st.selectbox(
         "Origin airport", sorted(forecastable['airport_1'].unique()), key="fc_origin",
-        format_func=lambda code: f"{code} - {airport_lookup.get(code, 'Unknown')}"
+        format_func=lambda code: f"🛫 {code} - {airport_lookup.get(code, 'Unknown')}"
     )
     fc_dest_options = sorted(forecastable[forecastable['airport_1'] == fc_origin]['airport_2'].unique())
     fc_dest = st.selectbox(
         "Destination airport", fc_dest_options, key="fc_dest",
-        format_func=lambda code: f"{code} - {airport_lookup.get(code, 'Unknown')}"
+        format_func=lambda code: f"🛬 {code} - {airport_lookup.get(code, 'Unknown')}"
+    )
+
+    test_mode = st.radio(
+        "Test period",
+        ["Pre-COVID (2015-2019)", "Including COVID disruption (2020-2024)"],
+        horizontal=True
     )
 
     if st.button("Run forecast"):
         route_ts = trends_df[
             (trends_df['airport_1'] == fc_origin) & (trends_df['airport_2'] == fc_dest)
         ].sort_values('Year')
-
         ts = route_ts.set_index('Year')['avg_fare_lg']
-        split_year = 2019
-        train = ts[ts.index <= split_year]
-        test = ts[ts.index > split_year]
+
+        if test_mode == "Pre-COVID (2015-2019)":
+            split_year = 2014
+            test_end = 2019
+            train = ts[ts.index <= split_year]
+            test = ts[(ts.index > split_year) & (ts.index <= test_end)]
+        else:
+            split_year = 2019
+            train = ts[ts.index <= split_year]
+            test = ts[ts.index > split_year]
 
         if len(train) < 5 or len(test) == 0:
             st.session_state["forecast_result"] = None
@@ -162,7 +174,7 @@ with tab2:
 
             st.session_state["forecast_result"] = {
                 "train": train, "test": test, "forecast": forecast,
-                "mape": mape, "origin": fc_origin, "dest": fc_dest
+                "mape": mape, "origin": fc_origin, "dest": fc_dest, "mode": test_mode
             }
             st.session_state["forecast_warning"] = None
 
@@ -182,7 +194,7 @@ with tab2:
         plt.tight_layout()
         st.pyplot(fig3)
 
-        st.metric("Forecast Accuracy (MAPE)", f"{r['mape']:.1f}%")
+        st.metric(f"Forecast Accuracy (MAPE) — {r['mode']}", f"{r['mape']:.1f}%")
         if r['mape'] < 10:
             st.success("Strong forecast accuracy.")
         elif r['mape'] < 20:
