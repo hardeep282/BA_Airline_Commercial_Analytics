@@ -1,0 +1,8 @@
+streamlit
+pandas
+matplotlib
+statsmodels
+chromadb
+anthropic
+pyarrow
+airportsdata
